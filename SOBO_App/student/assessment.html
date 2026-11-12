@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Assessment</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/assessment.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <nav id="nav" class="top"></nav>
+    <main class="wide" id="listView" hidden></main>
+    <div id="playerView" hidden></div>
+    <script type="module">
+      import { requireAuth } from "../js/session.js";
+      import { initAssessmentPage } from "../js/assessment.js";
+      // Students take quizzes; admins may open ?preview=<quizId> to try one without saving.
+      const p = await requireAuth();
+      await initAssessmentPage(p);
+    </script>
+  </body>
+</html>

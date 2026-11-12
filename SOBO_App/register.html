@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Create account · Anatomy Learning</title>
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/auth.css" />
+  </head>
+  <body class="auth">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="card">
+      <div class="auth-head">
+        <span class="eyebrow"><span class="logo">A</span> Anatomy Learning</span>
+        <h1>Start <em>learning</em></h1>
+        <p class="sub">Create a free account to explore, quiz yourself and track progress.</p>
+      </div>
+      <form id="f" novalidate>
+        <label for="name">Full name</label
+        ><input id="name" autocomplete="name" placeholder="Jane Doe" />
+        <label for="email">Email</label
+        ><input id="email" type="email" autocomplete="email" placeholder="you@example.com" />
+        <label for="pw">Password</label
+        ><input id="pw" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        <label for="pw2">Confirm password</label
+        ><input id="pw2" type="password" autocomplete="new-password" placeholder="Repeat password" />
+        <div class="row">
+          <button class="btn" id="go">Create account &rarr;</button>
+        </div>
+        <div class="msg" id="msg" role="alert"></div>
+      </form>
+      <div class="foot">Already have an account? <a href="login.html">Sign in</a></div>
+    </div>
+    <script type="module">
+      import { register } from "./js/auth.js";
+      const $ = (id) => document.getElementById(id),
+        msg = $("msg");
+      const fail = (t) => {
+        msg.textContent = t;
+        msg.className = "msg error";
+      };
+      $("f").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = $("name").value.trim(),
+          email = $("email").value.trim(),
+          pw = $("pw").value;
+        if (!name) return fail("Full name is required.");
+        if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Enter a valid email.");
+        if (pw.length < 8)
+          return fail("Password must be at least 8 characters.");
+        if (pw !== $("pw2").value) return fail("Passwords do not match.");
+        $("go").disabled = true;
+        msg.className = "msg";
+        msg.textContent = "Creating account...";
+        try {
+          const { session } = await register(name, email, pw);
+          if (session) location.href = "student/dashboard.html";
+          else {
+            msg.textContent =
+              "Account created. Check your email to confirm, then log in.";
+            msg.className = "msg success";
+          }
+        } catch (err) {
+          console.error(err);
+          fail(err.message);
+          $("go").disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

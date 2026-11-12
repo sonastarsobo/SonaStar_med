@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Result</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+    <link rel="stylesheet" href="../css/assessment.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <nav id="nav" class="top"></nav>
+    <main class="wide" id="root">
+      <section class="card" id="summary">
+        <p class="muted">Loading result...</p>
+      </section>
+      <div class="grid two" style="margin-top: 14px">
+        <section class="card">
+          <h2>Topic-wise score (this attempt)</h2>
+          <div id="topics"></div>
+        </section>
+        <section class="card">
+          <h2>Improvement over attempts</h2>
+          <div id="trend"></div>
+          <p class="small muted" id="trendNote"></p>
+        </section>
+      </div>
+      <h2 style="margin-top: 20px">Answer review</h2>
+      <div class="tabs noprint" id="filters" role="tablist">
+        <button data-f="ALL" aria-selected="true">All</button
+        ><button data-f="MISSED" aria-selected="false">Needs work</button
+        ><button data-f="INCORRECT" aria-selected="false">Incorrect</button>
+        <button data-f="UNANSWERED" aria-selected="false">Not answered</button
+        ><button data-f="CORRECT" aria-selected="false">Correct</button>
+      </div>
+      <div class="review-layout" id="reviewLayout">
+        <div id="rv"></div>
+        <div>
+          <div id="stage"></div>
+          <p id="legend3d" class="small muted noprint" style="margin-top: 6px">
+            Choose "Show in 3D" on a question to see the correct structures
+            highlighted.
+          </p>
+        </div>
+      </div>
+    </main>
+    <script type="module">
+      import { requireAuth } from "../js/session.js";
+      import { initResult } from "../js/result.js";
+      await initResult(await requireAuth());
+    </script>
+  </body>
+</html>

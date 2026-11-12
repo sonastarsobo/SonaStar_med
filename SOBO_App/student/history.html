@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>History</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+  </head>
+  <body>
+    <nav id="nav" class="top"></nav>
+    <main class="wide">
+      <h1>Assessment history</h1>
+      <div class="grid two">
+        <section class="card">
+          <h2>Scores over time</h2>
+          <div id="trend"></div>
+        </section>
+        <section class="card">
+          <h2>Best score per quiz</h2>
+          <div id="best"></div>
+        </section>
+      </div>
+      <section class="card" style="margin-top: 14px">
+        <div class="filters">
+          <select id="fQuiz" aria-label="Quiz">
+            <option value="">All quizzes</option>
+          </select>
+          <select id="fRes" aria-label="Result">
+            <option value="">Passed and failed</option>
+            <option value="P">Passed</option>
+            <option value="F">Failed</option>
+          </select>
+          <button class="btn secondary" id="csv">Download CSV</button>
+        </div>
+        <div class="tblwrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Quiz</th>
+                <th>Score</th>
+                <th>Points</th>
+                <th>Time</th>
+                <th>Result</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module">
+      import {
+        requireStudent,
+        $,
+        esc,
+        rpc,
+        mountNav,
+        fmtDate,
+        fmtDur,
+        pct,
+        lineChart,
+        barChart,
+        downloadCSV,
+        toast,
+      } from "../js/session.js";
+      mountNav(await requireStudent(), "history");
+      let all = [];
+      try {
+        all = await rpc("my_attempts");
+      } catch (e) {
+        toast(e.message, "error");
+      }
+      const titles = [...new Set(all.map((a) => a.title))].sort();
+      $("fQuiz").innerHTML += titles
+        .map((t) => `<option>${esc(t)}</option>`)
+        .join("");
+      lineChart(
+        $("trend"),
+        [...all]
+          .reverse()
+          .map((a, i) => ({
+            label: `${a.title} (${fmtDate(a.at)})`,
+            value: Number(a.percentage),
+            short: i + 1,
+          })),
+      );
+      barChart(
+        $("best"),
+        titles.map((t) => ({
+          label: t,
+          value: Math.max(
+            ...all
+              .filter((a) => a.title === t)
+              .map((a) => Number(a.percentage)),
+          ),
+        })),
+      );
+      const view = () =>
+        all.filter(
+          (a) =>
+            (!$("fQuiz").value || a.title === $("fQuiz").value) &&
+            (!$("fRes").value || (a.passed ? "P" : "F") === $("fRes").value),
+        );
+      function draw() {
+        const list = view();
+        $("rows").innerHTML = list.length
+          ? list
+              .map(
+                (
+                  a,
+                ) => `<tr><td class="nowrap">${fmtDate(a.at)}</td><td>${esc(a.title)}${a.status === "TIMEOUT" ? ' <span class="chip mid">timed out</span>' : ""}</td><td><b>${pct(a.percentage)}</b></td>
+    <td>${a.score} / ${a.total_points}</td><td>${fmtDur(a.time_taken_seconds)}</td><td><span class="chip ${a.passed ? "ok" : "bad"}">${a.passed ? "Passed" : "Failed"}</span></td>
+    <td><a class="btn small secondary" href="result.html?attempt=${a.id}">Review</a></td></tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="7" class="empty">No attempts yet.</td></tr>';
+      }
+      $("fQuiz").onchange = $("fRes").onchange = draw;
+      draw();
+      $("csv").onclick = () =>
+        downloadCSV("my-assessment-history.csv", [
+          [
+            "Date",
+            "Quiz",
+            "Percentage",
+            "Score",
+            "Total points",
+            "Time (s)",
+            "Result",
+            "Status",
+          ],
+          ...view().map((a) => [
+            a.at,
+            a.title,
+            a.percentage,
+            a.score,
+            a.total_points,
+            a.time_taken_seconds,
+            a.passed ? "Passed" : "Failed",
+            a.status,
+          ]),
+        ]);
+    </script>
+  </body>
+</html>

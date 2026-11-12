@@ -1,0 +1,6 @@
+<!doctype html><meta charset="utf-8" /><title>Anatomy Learning System</title>
+<script type="module">
+  import { getCurrentProfile, homeFor } from "./js/auth.js";
+  const p = await getCurrentProfile();
+  location.replace(p ? homeFor(p.role) : "login.html");
+</script>

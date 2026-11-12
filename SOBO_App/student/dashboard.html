@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+  </head>
+  <body>
+    <nav id="nav" class="top"></nav>
+    <main class="wide" id="root">
+      <h1 id="hi">Loading...</h1>
+      <section class="grid" id="overview"></section>
+      <div class="grid two">
+        <section class="card">
+          <h2>Performance</h2>
+          <div id="perf"></div>
+        </section>
+        <section class="card">
+          <h2>Continue learning</h2>
+          <div id="cont"></div>
+        </section>
+      </div>
+      <div class="grid two">
+        <section class="card">
+          <h2>Recent activity</h2>
+          <div id="recent"></div>
+        </section>
+        <section class="card">
+          <h2>Recommended learning</h2>
+          <div id="reco"></div>
+        </section>
+      </div>
+      <div class="grid two">
+        <section class="card">
+          <h2>Topic-wise accuracy</h2>
+          <div id="topics"></div>
+        </section>
+        <section class="card">
+          <h2>Achievements</h2>
+          <div id="ach"></div>
+        </section>
+      </div>
+    </main>
+    <script type="module">
+      import { requireStudent } from "../js/session.js";
+      import { initDashboard } from "../js/dashboard.js";
+      await initDashboard(await requireStudent());
+    </script>
+  </body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Profile</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/dashboard.css" />
+  </head>
+  <body>
+    <nav id="nav" class="top"></nav>
+    <main class="wide">
+      <h1>Profile</h1>
+      <div class="grid two">
+        <section class="card">
+          <h2>Account</h2>
+          <div class="field">
+            <label for="nm">Name</label><input id="nm" maxlength="80" />
+          </div>
+          <div class="field">
+            <label>Email</label><input id="em" disabled />
+          </div>
+          <button class="btn" id="saveName">Save name</button>
+          <h2 style="margin-top: 22px">Change password</h2>
+          <div class="field">
+            <label for="pw">New password</label
+            ><input
+              id="pw"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+            />
+          </div>
+          <button class="btn secondary" id="savePw">Update password</button>
+          <p class="msg" id="msg"></p>
+        </section>
+        <section class="card">
+          <h2>Progress</h2>
+          <div id="gam"><p class="muted">Loading...</p></div>
+        </section>
+      </div>
+    </main>
+    <script type="module">
+      import {
+        requireStudent,
+        $,
+        esc,
+        rpc,
+        mountNav,
+        toast,
+        setNavXP,
+      } from "../js/session.js";
+      import { supabase } from "../js/supabase.js";
+      const p = await requireStudent();
+      mountNav(p, "profile", { xp: false });
+      $("nm").value = p.name;
+      $("em").value = p.email || "";
+      $("saveName").onclick = async () => {
+        const name = $("nm").value.trim();
+        if (!name) return toast("Name cannot be empty", "error");
+        const { error } = await supabase
+          .from("profiles")
+          .update({ name })
+          .eq("id", p.id);
+        error
+          ? toast(error.message, "error")
+          : (toast("Saved", "success"), mountNav({ ...p, name }, "profile"));
+      };
+      $("savePw").onclick = async () => {
+        if ($("pw").value.length < 8)
+          return toast("Use at least 8 characters", "error");
+        const { error } = await supabase.auth.updateUser({
+          password: $("pw").value,
+        });
+        error
+          ? toast(error.message, "error")
+          : (toast("Password updated", "success"), ($("pw").value = ""));
+      };
+      try {
+        const g = (await rpc("my_dashboard")).gamification;
+        setNavXP(g);
+        $("gam").innerHTML =
+          `<p><b style="font-size:1.4rem">Level ${g.level}</b> &middot; ${g.xp} XP</p><div class="prog"><i style="width:${g.level_progress}%"></i></div>
+    <p class="small muted">${g.structures_viewed} structures studied</p><h3>Badges</h3><ul class="list">${g.badges.map((b) => `<li><span>${b.earned ? "&#9989;" : "&#9675;"} <b>${esc(b.name)}</b> <span class="muted small">${esc(b.desc)}</span></span></li>`).join("")}</ul>`;
+      } catch (e) {
+        $("gam").innerHTML = `<p class="msg error">${esc(e.message)}</p>`;
+      }
+    </script>
+  </body>
+</html>

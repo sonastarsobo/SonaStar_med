@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Learn</title>
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/anatomy.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <nav class="top" id="nav"></nav>
+    <div class="learn" id="learn">
+      <aside class="card" id="leftPane">
+        <h3>Body Systems</h3>
+        <input
+          id="search"
+          class="search"
+          type="search"
+          placeholder="Search organs..."
+          aria-label="Search organs"
+        />
+        <div id="tree">Loading anatomy...</div>
+      </aside>
+      <div
+        class="resizer"
+        data-side="left"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize Body Systems panel"
+        tabindex="0"
+        title="Drag to resize · double-click to reset"
+      ></div>
+      <div id="viewer">
+        <div id="status">Loading anatomy...</div>
+        <div id="sysbar">
+          <details id="sysMenu">
+            <summary>Systems <small id="sysCount"></small></summary>
+            <div id="sysPanel">
+              <div class="row2">
+                <button class="btn secondary" id="sysAll">All</button
+                ><button class="btn secondary" id="sysNone">None</button>
+              </div>
+              <div id="sysList"></div>
+            </div>
+          </details>
+        </div>
+        <div id="viewtools">
+          <button class="btn secondary" id="helpBtn" title="Help and shortcuts (H or ?)">? Help</button
+          ><button class="btn secondary" id="back" title="Previous selection (Backspace)">Back</button
+          ><button class="btn secondary" id="reset" title="Home view (R)">Home</button>
+        </div>
+        <div id="helpbox" hidden>
+          <h4>Controls</h4>
+          <dl>
+            <dt>Rotate</dt>
+            <dd>Left-click and drag</dd>
+            <dt>Pan</dt>
+            <dd>Right-click and drag, or Shift + drag, or Shift + arrow keys</dd>
+            <dt>Zoom</dt>
+            <dd>Mouse wheel, pinch, Zoom +/- or the + / - keys</dd>
+            <dt>Select</dt>
+            <dd>Click a structure (or a row in the list)</dd>
+            <dt>Box select</dt>
+            <dd>
+              Hold Ctrl and drag with the left mouse; add Shift to add to the
+              current selection
+            </dd>
+            <dt>Multi-select</dt>
+            <dd>
+              Ctrl or Shift + click several parts, then press Isolate: the
+              camera jumps to them
+            </dd>
+            <dt>Systems</dt>
+            <dd>Tick several systems to view them together</dd>
+            <dt>Name</dt>
+            <dd>Hover over a structure</dd>
+            <dt>Touch</dt>
+            <dd>One finger rotates; two fingers zoom and pan</dd>
+            <dt>Section</dt>
+            <dd>
+              Open Section, pick a plane and drag the slider to cut through the
+              body
+            </dd>
+          </dl>
+          <h4 class="kbd-title">Keyboard shortcuts</h4>
+          <table class="kbd-table">
+            <tr><td><kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Rotate (hold)</td></tr>
+            <tr><td><kbd>Shift</kbd> + arrows / WASD</td><td>Pan (hold)</td></tr>
+            <tr><td><kbd>+</kbd> <kbd>-</kbd> or <kbd>E</kbd> <kbd>Q</kbd></td><td>Zoom in / out (hold)</td></tr>
+            <tr><td><kbd>]</kbd> <kbd>[</kbd></td><td>Select next / previous structure</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>]</kbd> <kbd>[</kbd></td><td>Add next / previous to selection</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Zoom to selection</td></tr>
+            <tr><td><kbd>I</kbd></td><td>Isolate selection</td></tr>
+            <tr><td><kbd>X</kbd> or <kbd>Del</kbd></td><td>Hide selection</td></tr>
+            <tr><td><kbd>U</kbd></td><td>Show all</td></tr>
+            <tr><td><kbd>C</kbd></td><td>Section (cut) panel</td></tr>
+            <tr><td><kbd>R</kbd> or <kbd>Home</kbd></td><td>Home view</td></tr>
+            <tr><td><kbd>Backspace</kbd></td><td>Back to previous selection</td></tr>
+            <tr><td><kbd>/</kbd></td><td>Search structures</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Deselect / close panels</td></tr>
+            <tr><td><kbd>H</kbd> or <kbd>?</kbd></td><td>Show / hide this help</td></tr>
+          </table>
+        </div>
+        <div id="secbox" hidden>
+          <h4>Section (cut)</h4>
+          <label for="secAxis">Cut plane</label
+          ><select id="secAxis">
+            <option value="">Off</option>
+            <option value="y">Transverse (top to bottom)</option>
+            <option value="z">Coronal (front to back)</option>
+            <option value="x">Sagittal (left to right)</option>
+          </select>
+          <label for="secPos">Position</label
+          ><input id="secPos" type="range" min="0" max="100" value="0" />
+          <div class="row2">
+            <button class="btn secondary" id="secFlip">Flip side</button
+            ><button class="btn secondary" id="secOff">Remove cut</button>
+          </div>
+        </div>
+        <div id="selname"></div>
+        <div id="hover"></div>
+      </div>
+      <div
+        class="resizer"
+        data-side="right"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize Information panel"
+        tabindex="0"
+        title="Drag to resize · double-click to reset"
+      ></div>
+      <aside class="card" id="rightPane">
+        <h3>Information</h3>
+        <div id="info">
+          <p class="msg">Click a structure in the 3D model or the hierarchy.</p>
+        </div>
+      </aside>
+      <div class="tools">
+        <button class="btn secondary" id="zin" title="Zoom in (+ or E)">Zoom + <kbd>+</kbd></button
+        ><button class="btn secondary" id="zout" title="Zoom out (- or Q)">Zoom - <kbd>-</kbd></button>
+        <button class="btn secondary" id="hide" title="Hide selection (X or Delete)">Hide <kbd>X</kbd></button
+        ><button class="btn secondary" id="iso" title="Isolate selection (I)">Isolate <kbd>I</kbd></button>
+        <button class="btn secondary" id="show" title="Show all (U)">Show all <kbd>U</kbd></button
+        ><button class="btn secondary" id="secBtn" title="Section panel (C)">&#9988; Section <kbd>C</kbd></button
+        ><label class="chk"
+          ><input type="checkbox" id="autoFocus" checked /> Zoom to
+          selection</label
+        >
+      </div>
+    </div>
+    <script type="module">
+      import { requireStudent, mountNav } from "../js/session.js";
+      import { createViewer } from "../js/three-viewer.js";
+      import {
+        loadSystems,
+        loadAllStructures,
+        loadStructureById,
+        getModelUrl,
+        systemLook,
+        logView,
+      } from "../js/anatomy.js";
+
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      mountNav(await requireStudent(), "learn");
+
+      let systems = [],
+        all = [],
+        visibleSys = new Set(),
+        objMap = new Map(),
+        history = [],
+        selRows = [];
+      const rowById = (id) => all.find((r) => r.id === id);
+      const hasModel = (sysId) =>
+        all.some((r) => r.system_id === sysId && r.model_file_path);
+
+      // ---- Information panel (About System) ----
+      async function showRow(row) {
+        if (!row) {
+          $("info").innerHTML =
+            '<p class="msg">No anatomy information is linked to this object yet.</p>';
+          return;
+        }
+        $("info").innerHTML = '<p class="msg">Loading...</p>';
+        try {
+          const s = await loadStructureById(row.id);
+          $("info").innerHTML =
+            `<h4>${esc(s.name)}</h4><dl><dt>System</dt><dd>${esc(s.anatomy_systems?.name)}</dd><dt>Location</dt><dd>${esc(s.location) || "-"}</dd>
+      <dt>Function</dt><dd>${esc(s.function) || "-"}</dd><dt>Important features</dt><dd>${esc(s.important_features) || "-"}</dd>
+      <dt>Description</dt><dd>${esc(s.description) || "-"}</dd></dl>`;
+        } catch (e) {
+          console.error(e);
+          $("info").innerHTML =
+            '<p class="msg error">Unable to load structure information.</p>';
+        }
+      }
+
+      // ---- Selection (one or many rows) ----
+      const childrenOf = (row) => all.filter((r) => r.parent_id === row.id);
+      // Object names to act on: the row itself plus every descendant that has a model object
+      function objIds(row) {
+        const out = [];
+        const walk = (r) => {
+          if (r.model_object_id) out.push(r.model_object_id);
+          childrenOf(r).forEach(walk);
+        };
+        walk(row);
+        return out;
+      }
+      const nodeEl = (id) =>
+        document.querySelector(`#tree .node[data-id="${id}"]`);
+      function renderActive() {
+        // viewport label + hierarchy highlight
+        document
+          .querySelectorAll("#tree .node.active")
+          .forEach((l) => l.classList.remove("active"));
+        const sel = $("selname");
+        sel.style.display = selRows.length ? "block" : "none";
+        sel.textContent =
+          selRows.length > 1
+            ? `${selRows.length} parts selected`
+            : selRows[0]?.name || "";
+        selRows.forEach((r) => nodeEl(r.id)?.classList.add("active"));
+        const el = selRows.length && nodeEl(selRows[selRows.length - 1].id);
+        if (el) {
+          for (
+            let d = el.parentElement.closest("details");
+            d;
+            d = d.parentElement.closest("details")
+          )
+            d.open = true;
+          el.scrollIntoView({ block: "nearest" });
+        }
+      }
+      function showSelection() {
+        // information panel
+        if (selRows.length === 0)
+          $("info").innerHTML =
+            '<p class="msg">Click a structure in the 3D model or the hierarchy. Ctrl/Shift + click selects several.</p>';
+        else if (selRows.length === 1) showRow(selRows[0]);
+        else
+          $("info").innerHTML =
+            `<h4>${selRows.length} parts selected</h4><ul>${selRows
+              .slice(0, 15)
+              .map((r) => `<li>${esc(r.name)}</li>`)
+              .join(
+                "",
+              )}${selRows.length > 15 ? "<li>...</li>" : ""}</ul><p class="msg">Use Isolate to view them together, or Hide to hide them.</p>`;
+      }
+      // Highlight every selected row in 3D (can span several systems); returns how many objects matched
+      function setSelection(rows) {
+        selRows = rows;
+        const bySys = new Map();
+        rows.forEach((r) => {
+          if (!bySys.has(r.system_id)) bySys.set(r.system_id, []);
+          bySys.get(r.system_id).push(...objIds(r));
+        });
+        const n = viewer.selectMany(
+          [...bySys].map(([key, names]) => ({ key, names })),
+        );
+        renderActive();
+        showSelection();
+        return n;
+      }
+      const toggleRow = (row, additive) =>
+        !additive
+          ? [row]
+          : selRows.some((r) => r.id === row.id)
+            ? selRows.filter((r) => r.id !== row.id)
+            : [...selRows, row];
+
+      // Smoothly zoom the camera to whatever is selected (can be switched off with the checkbox)
+      const focusIfAuto = () => {
+        if ($("autoFocus").checked && selRows.length) viewer.focusSelected();
+      };
+
+      const viewer = createViewer($("viewer"), {
+        orbitKeys: false, // the page-wide shortcuts below drive the camera
+        onBoxSelect(items, additive) {
+          // Ctrl + drag rectangle
+          const rows = [],
+            seen = new Set();
+          items.forEach(({ key, names }) => {
+            const row = names
+              .map((n) => objMap.get(key + "|" + n))
+              .find(Boolean);
+            if (row && !seen.has(row.id)) {
+              seen.add(row.id);
+              rows.push(row);
+            }
+          });
+          if (!rows.length) {
+            if (!additive) setSelection([]);
+            return;
+          }
+          setSelection(
+            additive
+              ? [
+                  ...selRows,
+                  ...rows.filter((r) => !selRows.some((s) => s.id === r.id)),
+                ]
+              : rows,
+          );
+          focusIfAuto();
+        },
+        onSelect(names, _t, key, additive) {
+          if (!names.length) {
+            if (!additive) setSelection([]);
+            return;
+          }
+          const row = names.map((n) => objMap.get(key + "|" + n)).find(Boolean);
+          if (!row) {
+            if (additive) return;
+            selRows = [];
+            renderActive();
+            $("selname").style.display = "block";
+            $("selname").textContent = names[0];
+            showRow(null);
+            return;
+          }
+          setSelection(toggleRow(row, additive));
+          if (!additive) {
+            pushHistory(row);
+            logView(row);
+          }
+          focusIfAuto();
+        },
+        onHover(names, x, y, key) {
+          const h = $("hover");
+          if (!names.length) {
+            h.style.display = "none";
+            return;
+          }
+          h.textContent =
+            names.map((n) => objMap.get(key + "|" + n)?.name).find(Boolean) ||
+            names[0];
+          h.style.left = x + 12 + "px";
+          h.style.top = y + 12 + "px";
+          h.style.display = "block";
+        },
+      });
+
+      // ---- Systems: any number can be visible at once ----
+      const modelSystems = () =>
+        new Set(systems.filter((s) => hasModel(s.id)).map((s) => s.id));
+      // Default view: the first system only, so a visit downloads one model instead of all of them
+      const defaultSystems = () => {
+        const first = systems.find((s) => hasModel(s.id));
+        return new Set(first ? [first.id] : []);
+      };
+
+      // ---- Models download only when their system is first shown (saves Supabase egress) ----
+      const modelJobs = new Map(); // system id -> Promise<boolean loaded>
+      let loadingCount = 0;
+      function updateLoadStatus() {
+        const st = $("status");
+        if (loadingCount) {
+          st.style.display = "";
+          st.textContent = `Loading ${loadingCount} model(s)...`;
+        } else if (viewer.hasModels() || !modelJobs.size)
+          st.style.display = "none";
+        else {
+          st.style.display = "";
+          st.textContent = "Could not load any 3D model. Check Storage paths.";
+        }
+      }
+      function ensureModels(ids) {
+        const jobs = [...ids].filter(hasModel).map((id) => {
+          if (!modelJobs.has(id)) {
+            const s = systems.find((x) => x.id === id);
+            const path = all.find(
+              (r) => r.system_id === id && r.model_file_path,
+            ).model_file_path;
+            loadingCount++;
+            const job = viewer
+              .addModel(id, getModelUrl(path), systemLook[s.name] || {})
+              .then(
+                () => true,
+                (err) => {
+                  console.error("Model load failure:", s.name, err);
+                  modelJobs.delete(id); // ticking the system again retries
+                  $("info").innerHTML =
+                    `<p class="msg error">Could not load: ${esc(s.name)}.</p>`;
+                  return false;
+                },
+              )
+              .finally(() => {
+                loadingCount--;
+                updateLoadStatus();
+              });
+            modelJobs.set(id, job);
+          }
+          return modelJobs.get(id);
+        });
+        updateLoadStatus();
+        return Promise.all(jobs);
+      }
+
+      function setVisibleSystems(set) {
+        visibleSys = set;
+        viewer.setVisibleModels(set);
+        document
+          .querySelectorAll("[data-syschk]")
+          .forEach((cb) => (cb.checked = set.has(cb.dataset.syschk)));
+        document
+          .querySelectorAll("#tree details[data-sys]")
+          .forEach((d) =>
+            d.classList.toggle("hidden-sys", !set.has(d.dataset.sys)),
+          );
+        $("sysCount").textContent = `(${set.size}/${modelSystems().size})`;
+        const keep = selRows.filter(
+          (r) => set.has(r.system_id) || !hasModel(r.system_id),
+        );
+        if (keep.length !== selRows.length) setSelection(keep);
+        if (typeof updateSection === "function") updateSection();
+        return ensureModels(set);
+      }
+      const toggleSystem = (id, on) => {
+        const s = new Set(visibleSys);
+        on ? s.add(id) : s.delete(id);
+        return setVisibleSystems(s);
+      };
+      document.addEventListener("change", (e) => {
+        const cb = e.target.closest?.("[data-syschk]");
+        if (cb) toggleSystem(cb.dataset.syschk, cb.checked);
+      });
+      function buildSystemMenu() {
+        $("sysList").innerHTML = systems
+          .map((s) =>
+            hasModel(s.id)
+              ? `<label><input type="checkbox" data-syschk="${s.id}" checked> ${esc(s.name)}</label>`
+              : `<label class="dim"><input type="checkbox" disabled> ${esc(s.name)} (no model)</label>`,
+          )
+          .join("");
+      }
+
+      // ---- Select / isolate parts or whole groups ----
+      function pushHistory(row) {
+        if (history[history.length - 1]?.id !== row.id) history.push(row);
+      }
+      async function selectRow(
+        row,
+        { isolate = false, fromHistory = false, additive = false } = {},
+      ) {
+        if (hasModel(row.system_id)) {
+          if (!visibleSys.has(row.system_id)) toggleSystem(row.system_id, true); // reveal its system
+          await ensureModels([row.system_id]); // its model may still be downloading
+        }
+        if (!additive) viewer.showAll();
+        const n = setSelection(toggleRow(row, additive));
+        if (!n && selRows.length)
+          $("info").innerHTML =
+            '<p class="msg error">This structure was not found in the 3D model.</p>';
+        if (isolate)
+          viewer.isolateSelected(); // hides everything else and smoothly zooms to the selection
+        else focusIfAuto();
+        if (!fromHistory && !additive) pushHistory(row);
+      }
+
+      // ---- Hierarchy System (nested by parent_id, groups collapsible) ----
+      const nodeHtml = (
+        r,
+        tag,
+      ) => `<${tag} class="node" data-id="${r.id}" data-name="${esc(r.name.toLowerCase())}"><span class="nm" title="${esc(r.name)}">${esc(r.name)}</span>
+  <button class="eye" title="Show / hide">&#128065;</button><button class="iso" title="Isolate">&#9678;</button></${tag}>`;
+      function buildTree() {
+        const tree = $("tree");
+        tree.innerHTML = "";
+        if (!systems.length) {
+          tree.textContent = "No systems found.";
+          return;
+        }
+        const kids = (sysId, parent) =>
+          all.filter(
+            (r) => r.system_id === sysId && (r.parent_id || null) === parent,
+          );
+        const items = (sysId, parent) =>
+          kids(sysId, parent)
+            .map((r) => {
+              const sub = kids(sysId, r.id);
+              return sub.length
+                ? `<details data-id="${r.id}">${nodeHtml(r, "summary")}<ul>${items(sysId, r.id)}</ul></details>`
+                : nodeHtml(r, "li");
+            })
+            .join("");
+        for (const s of systems) {
+          const d = document.createElement("details");
+          d.dataset.sys = s.id;
+          const n = all.filter((r) => r.system_id === s.id).length;
+          const chk = hasModel(s.id)
+            ? `<input type="checkbox" data-syschk="${s.id}" checked title="Show / hide this system"> `
+            : "";
+          d.innerHTML = `<summary>${chk}${esc(s.name)} <small>(${n})</small></summary><ul>${items(s.id, null) || '<li class="msg">No structures yet</li>'}</ul>`;
+          tree.appendChild(d);
+        }
+      }
+      $("tree").addEventListener("click", (e) => {
+        const node = e.target.closest(".node");
+        if (!node) return;
+        const row = rowById(node.dataset.id),
+          additive = e.ctrlKey || e.shiftKey || e.metaKey;
+        if (e.target.closest("button")) e.preventDefault(); // do not collapse a group when using its buttons
+        if (e.target.closest(".eye")) {
+          // show / hide this part or group
+          const v = viewer.toggleNames(objIds(row), row.system_id);
+          node.classList.toggle("off", v === false);
+        } else if (e.target.closest(".iso")) {
+          if (selRows.length > 1 && selRows.some((r) => r.id === row.id))
+            viewer.isolateSelected(); // whole multi-selection
+          else selectRow(row, { isolate: true, additive });
+        } else selectRow(row, { additive });
+      });
+
+      // ---- Search System ----
+      $("search").addEventListener("input", () => {
+        const q = $("search").value.trim().toLowerCase();
+        document.querySelectorAll("#tree li.node").forEach((li) => {
+          li.style.display = !q || li.dataset.name.includes(q) ? "" : "none";
+        });
+        [...document.querySelectorAll("#tree details")]
+          .reverse()
+          .forEach((d) => {
+            // children are processed before parents
+            const own =
+              !!q &&
+              !!d
+                .querySelector(":scope > summary.node")
+                ?.dataset.name?.includes(q);
+            const childShown = [...d.querySelectorAll(":scope > ul > *")].some(
+              (c) => c.style.display !== "none",
+            );
+            d.style.display = !q || own || childShown ? "" : "none";
+            if (q && childShown) d.open = true;
+          });
+      });
+      $("search").addEventListener("keydown", (e) => {
+        // Enter selects the first match
+        const q = $("search").value.trim().toLowerCase();
+        if (e.key !== "Enter" || !q) return;
+        const n = [...document.querySelectorAll("#tree .node")].find((x) =>
+          x.dataset.name.includes(q),
+        );
+        if (n) selectRow(rowById(n.dataset.id));
+      });
+
+      // ---- Viewing, Inspect and Return controls ----
+      $("zin").onclick = () => viewer.zoomBy(0.8);
+      $("zout").onclick = () => viewer.zoomBy(1.25);
+      $("hide").onclick = () => {
+        selRows.forEach((r) => nodeEl(r.id)?.classList.add("off"));
+        viewer.hideSelected();
+        setSelection([]);
+      };
+      $("iso").onclick = () => {
+        if (!selRows.length) {
+          $("info").innerHTML =
+            '<p class="msg">Select one or more parts first (Ctrl/Shift + click to add more), then press Isolate.</p>';
+          return;
+        }
+        viewer.isolateSelected();
+      };
+      const clearOff = () =>
+        document
+          .querySelectorAll("#tree .node.off")
+          .forEach((l) => l.classList.remove("off"));
+      $("show").onclick = () => {
+        viewer.showAll();
+        clearOff();
+        viewer.resetCamera();
+      };
+      $("reset").onclick = () => {
+        // Home: default system view, nothing selected, default camera ("All" in the Systems menu shows every system)
+        $("secOff").click();
+        setVisibleSystems(defaultSystems());
+        viewer.showAll();
+        setSelection([]);
+        viewer.resetCamera();
+        history = [];
+        clearOff();
+      };
+      $("back").onclick = () => {
+        // previous selection
+        history.pop();
+        const prev = history[history.length - 1];
+        if (prev) selectRow(prev, { fromHistory: true });
+        else {
+          viewer.showAll();
+          setSelection([]);
+        }
+      };
+      $("sysAll").onclick = () => setVisibleSystems(modelSystems());
+      $("sysNone").onclick = () => setVisibleSystems(new Set());
+      // Section (dissection cut)
+      let secFlip = false;
+      const updateSection = () =>
+        viewer.setSection(
+          $("secAxis").value || null,
+          $("secPos").value / 100,
+          secFlip,
+        );
+      $("secBtn").onclick = () => ($("secbox").hidden = !$("secbox").hidden);
+      $("secAxis").onchange = updateSection;
+      $("secPos").oninput = updateSection;
+      $("secFlip").onclick = () => {
+        secFlip = !secFlip;
+        updateSection();
+      };
+      $("secOff").onclick = () => {
+        $("secAxis").value = "";
+        $("secPos").value = 0;
+        secFlip = false;
+        updateSection();
+      };
+      const toggleHelp = () => ($("helpbox").hidden = !$("helpbox").hidden);
+      $("helpBtn").onclick = toggleHelp;
+      // ---- Keyboard: every mouse action has a key ----
+      // Movement keys are "held": while down, the camera moves smoothly every frame.
+      const MOVES = {
+        arrowleft: "left", a: "left",
+        arrowright: "right", d: "right",
+        arrowup: "up", w: "up",
+        arrowdown: "down", s: "down",
+        "+": "in", "=": "in", e: "in",
+        "-": "out", _: "out", q: "out",
+      };
+      const held = new Map(); // physical key (e.code) -> action
+      let moveFrame = 0, lastT = 0, panMode = false;
+      function moveLoop(t) {
+        const dt = Math.min(0.05, (t - (lastT || t)) / 1000);
+        lastT = t;
+        if (!held.size) { moveFrame = 0; lastT = 0; return; }
+        const acts = new Set(held.values());
+        const h = (acts.has("right") ? 1 : 0) - (acts.has("left") ? 1 : 0),
+          v = (acts.has("up") ? 1 : 0) - (acts.has("down") ? 1 : 0),
+          z = (acts.has("in") ? 1 : 0) - (acts.has("out") ? 1 : 0);
+        if (h || v) {
+          if (panMode) viewer.panBy(h * 0.7 * dt, v * 0.7 * dt);
+          else viewer.rotateBy(-h * 1.8 * dt, -v * 1.4 * dt);
+        }
+        if (z) viewer.zoomBy(Math.pow(z > 0 ? 0.3 : 1 / 0.3, dt));
+        moveFrame = requestAnimationFrame(moveLoop);
+      }
+      const stopMoves = () => held.clear();
+      window.addEventListener("blur", stopMoves);
+      document.addEventListener("keyup", (e) => {
+        held.delete(e.code);
+        if (e.key === "Shift") panMode = false;
+      });
+
+      // Select the next / previous visible structure in the hierarchy (like clicking its row)
+      function stepTree(dir, additive) {
+        const nodes = [...document.querySelectorAll("#tree .node")].filter(
+          (n) => n.offsetParent !== null,
+        );
+        if (!nodes.length) return;
+        const cur = selRows.length
+          ? nodes.findIndex((n) => n.dataset.id === selRows[selRows.length - 1].id)
+          : -1;
+        const next =
+          nodes[cur < 0 ? (dir > 0 ? 0 : nodes.length - 1) : (cur + dir + nodes.length) % nodes.length];
+        selectRow(rowById(next.dataset.id), { additive });
+      }
+
+      const closePanels = () => {
+        let closed = false;
+        for (const id of ["helpbox", "secbox"])
+          if (!$(id).hidden) { $(id).hidden = true; closed = true; }
+        if ($("sysMenu").open) { $("sysMenu").open = false; closed = true; }
+        return closed;
+      };
+      const flash = (id) => {
+        const b = $(id);
+        b?.classList.add("kbd-hit");
+        setTimeout(() => b?.classList.remove("kbd-hit"), 160);
+      };
+
+      document.addEventListener("keydown", (e) => {
+        if (/input|select|textarea/i.test(e.target.tagName)) {
+          if (e.key === "Escape") e.target.blur();
+          return;
+        }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.target.closest?.(".resizer")) return; // resize handles use the arrows themselves
+        const k = e.key.toLowerCase();
+        if (k === "shift") { panMode = true; return; }
+
+        if (MOVES[k]) {
+          e.preventDefault();
+          panMode = e.shiftKey;
+          held.set(e.code, MOVES[k]);
+          if (!moveFrame) moveFrame = requestAnimationFrame(moveLoop);
+          return;
+        }
+        const run = {
+          "]": () => stepTree(1, e.shiftKey),
+          "}": () => stepTree(1, true),
+          "[": () => stepTree(-1, e.shiftKey),
+          "{": () => stepTree(-1, true),
+          f: () => selRows.length && viewer.focusSelected(),
+          i: () => { flash("iso"); $("iso").click(); },
+          x: () => { flash("hide"); $("hide").click(); },
+          delete: () => { flash("hide"); $("hide").click(); },
+          u: () => { flash("show"); $("show").click(); },
+          c: () => { flash("secBtn"); $("secBtn").click(); },
+          r: () => { flash("reset"); $("reset").click(); },
+          home: () => { flash("reset"); $("reset").click(); },
+          backspace: () => { flash("back"); $("back").click(); },
+          "/": () => $("search").focus(),
+          h: toggleHelp,
+          "?": toggleHelp,
+          escape: () => { if (!closePanels()) setSelection([]); },
+        }[k];
+        if (run) {
+          e.preventDefault();
+          run();
+        }
+      });
+
+      // ---- Resizable side panels: drag the handle (or focus it and use the arrow keys) ----
+      const learnEl = $("learn");
+      const PANE_KEY = "learn:panes";
+      const MIN_PANE = 180, MIN_VIEWER = 320;
+      const paneWidth = (side) => $(side === "left" ? "leftPane" : "rightPane").getBoundingClientRect().width;
+      function setPane(side, px, save = true) {
+        const total = learnEl.clientWidth - 28 - 28; // padding + two handles
+        const other = paneWidth(side === "left" ? "right" : "left");
+        const max = Math.max(MIN_PANE, Math.min(720, total - other - MIN_VIEWER));
+        const w = Math.round(Math.min(max, Math.max(MIN_PANE, px)));
+        learnEl.style.setProperty(side === "left" ? "--lw" : "--rw", w + "px");
+        if (save) {
+          try {
+            const saved = JSON.parse(localStorage.getItem(PANE_KEY) || "{}");
+            saved[side] = w;
+            localStorage.setItem(PANE_KEY, JSON.stringify(saved));
+          } catch {}
+        }
+      }
+      function resetPane(side) {
+        learnEl.style.removeProperty(side === "left" ? "--lw" : "--rw");
+        try {
+          const saved = JSON.parse(localStorage.getItem(PANE_KEY) || "{}");
+          delete saved[side];
+          localStorage.setItem(PANE_KEY, JSON.stringify(saved));
+        } catch {}
+      }
+      try {
+        const saved = JSON.parse(localStorage.getItem(PANE_KEY) || "{}");
+        if (saved.left) setPane("left", saved.left, false);
+        if (saved.right) setPane("right", saved.right, false);
+      } catch {}
+      document.querySelectorAll(".resizer").forEach((h) => {
+        const side = h.dataset.side;
+        h.addEventListener("pointerdown", (e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          h.setPointerCapture(e.pointerId);
+          h.classList.add("drag");
+          learnEl.classList.add("resizing");
+          const startX = e.clientX, startW = paneWidth(side);
+          const move = (ev) =>
+            setPane(side, startW + (side === "left" ? 1 : -1) * (ev.clientX - startX), false);
+          const up = () => {
+            h.removeEventListener("pointermove", move);
+            h.classList.remove("drag");
+            learnEl.classList.remove("resizing");
+            setPane(side, paneWidth(side)); // persist the final width
+          };
+          h.addEventListener("pointermove", move);
+          h.addEventListener("pointerup", up, { once: true });
+          h.addEventListener("pointercancel", up, { once: true });
+        });
+        h.addEventListener("dblclick", () => resetPane(side));
+        h.addEventListener("keydown", (e) => {
+          const step = e.shiftKey ? 64 : 16;
+          const grow = side === "left" ? 1 : -1;
+          if (e.key === "ArrowLeft") setPane(side, paneWidth(side) - step * grow);
+          else if (e.key === "ArrowRight") setPane(side, paneWidth(side) + step * grow);
+          else if (e.key === "Enter" || e.key === "Home") resetPane(side);
+          else return;
+          e.preventDefault();
+        });
+      });
+
+      // Open structures named in the URL: show only their systems, select them and zoom in. Returns false if there is no link.
+      async function openDeepLink() {
+        const q = new URLSearchParams(location.search);
+        const ids = [
+          q.get("structure"),
+          ...(q.get("structures") || "").split(","),
+        ].filter(Boolean);
+        const rows = ids.map(rowById).filter(Boolean);
+        if (!rows.length) return false;
+        const sys = rows.map((r) => r.system_id).filter(hasModel);
+        await setVisibleSystems(sys.length ? new Set(sys) : defaultSystems());
+        setSelection(rows);
+        focusIfAuto();
+        if (rows.length === 1) logView(rows[0]);
+        return true;
+      }
+
+      try {
+        [systems, all] = await Promise.all([
+          loadSystems(),
+          loadAllStructures(),
+        ]);
+        objMap = new Map(
+          all
+            .filter((r) => r.model_object_id)
+            .map((r) => [r.system_id + "|" + r.model_object_id, r]),
+        );
+        buildTree();
+        buildSystemMenu();
+        if (!modelSystems().size)
+          $("status").textContent = "No 3D models have been uploaded yet.";
+        // ?structure=<id> or ?structures=<id,id,...> (from the dashboard and "Learn from mistakes"); otherwise the default system
+        else if (!(await openDeepLink()))
+          await setVisibleSystems(defaultSystems());
+      } catch (e) {
+        console.error(e);
+        $("tree").innerHTML =
+          '<span class="msg error">Unable to load anatomy.</span>';
+        $("status").textContent = "Unable to load anatomy.";
+      }
+    </script>
+  </body>
+</html>
